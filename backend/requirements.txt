@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+alembic
+sqlalchemy
+langchain
+pyjwt
+bcrypt
+python-dotenv
+email-validator
+psycopg2-binary
+pgvector
+google-genai
+pypdf
+python-docx
+python-multipart
