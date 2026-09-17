@@ -33,6 +33,21 @@ export function isAuthenticated() {
   return Boolean(getToken());
 }
 
+export async function verifyToken() {
+  if (!getToken()) {
+    return false;
+  }
+
+  try {
+    await api.get("/api/auth/me");
+    return true;
+  } catch {
+    clearToken();
+    clearStoredUser();
+    return false;
+  }
+}
+
 export function getCurrentUser() {
   return getStoredUser();
 }

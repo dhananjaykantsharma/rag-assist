@@ -1,13 +1,34 @@
+import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
 import Documents from "../pages/Documents";
 import Chat from "../pages/Chat";
-import { isAuthenticated } from "../services/auth";
+import { verifyToken } from "../services/auth";
 
 function ProtectedRoute({ children }) {
-  return isAuthenticated() ? children : <Navigate to="/login" replace />;
+  const [status, setStatus] = useState("checking");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    verifyToken().then((valid) => {
+      if (!cancelled) {
+        setStatus(valid ? "valid" : "invalid");
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (status === "checking") {
+    return null;
+  }
+
+  return status === "valid" ? children : <Navigate to="/login" replace />;
 }
 
 function AppRoutes() {
