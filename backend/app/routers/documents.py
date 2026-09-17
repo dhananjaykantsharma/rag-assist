@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..config import MAX_DOCUMENT_WORDS, QA_TOP_K_CHUNKS
@@ -12,6 +13,39 @@ from ..services.generation import generate_answer
 from ..services.text_extraction import extract_text
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
+
+
+@router.get("", response_model=list[DocumentOut])
+def list_documents(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    documents = (
+        db.query(Document)
+        .filter(Document.owner_id == current_user.id)
+        .order_by(Document.created_at.desc())
+        .all()
+    )
+
+    chunk_counts = dict(
+        db.query(DocumentChunk.document_id, func.count(DocumentChunk.id))
+        .join(Document, Document.id == DocumentChunk.document_id)
+        .filter(Document.owner_id == current_user.id)
+        .group_by(DocumentChunk.document_id)
+        .all()
+    )
+
+    return [
+        DocumentOut(
+            id=document.id,
+            filename=document.filename,
+            content_type=document.content_type,
+            word_count=document.word_count,
+            chunk_count=chunk_counts.get(document.id, 0),
+            created_at=document.created_at,
+        )
+        for document in documents
+    ]
 
 
 def _get_owned_document(document_id: int, current_user: User, db: Session) -> Document:

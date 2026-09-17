@@ -1,5 +1,10 @@
 import api from "./api";
 
+export async function listDocuments() {
+  const response = await api.get("/api/documents");
+  return response.data;
+}
+
 export async function uploadDocument(file) {
   const formData = new FormData();
   formData.append("file", file);

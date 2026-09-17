@@ -1,8 +1,8 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { logout } from "../services/auth";
-import { uploadDocument } from "../services/documents";
+import { listDocuments, uploadDocument } from "../services/documents";
 
 function Documents() {
 
@@ -12,8 +12,34 @@ function Documents() {
 
   const [file, setFile] = useState(null);
   const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    listDocuments()
+      .then((data) => {
+        if (!cancelled) {
+          setDocuments(data);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err.response?.data?.detail || "Failed to load documents.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -111,8 +137,10 @@ function Documents() {
 
           <h2>Your Documents</h2>
 
-          {documents.length === 0 && (
-            <p>No documents uploaded yet in this session.</p>
+          {loading && <p>Loading documents...</p>}
+
+          {!loading && documents.length === 0 && (
+            <p>No documents uploaded yet.</p>
           )}
 
           {documents.map((document) => (
